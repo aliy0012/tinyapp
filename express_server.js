@@ -9,6 +9,9 @@ const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+let newUrlDatabase = {};
+let templateVariable = {};
+let templateVars = {};
 
 
 app.use(bodyParser.urlencoded({extended: true}));
@@ -53,16 +56,28 @@ app.get('/u/:shortURL', (req, res) => {
 app.post("/urls", (req, res) => {
   const longUrl = req.body.longURL
   const shortUrl = generatRandomString();
-  const templateVariable = { shortURL: shortUrl, longURL: longUrl};
-
-  const newUrlDatabase = {...urlDatabase, [shortUrl]: longUrl};
-  const templateVars = { urls: newUrlDatabase };
-  //res.status(200).render("urls_index", templateVars);
-  res.status(200).render("urls_show", templateVariable);
+  newUrlDatabase = {...urlDatabase, [shortUrl]: longUrl};
+  templateVariable = { shortURL: shortUrl, longURL: longUrl};
+  
+  templateVars = { urls: newUrlDatabase };
+  res.status(200).render("urls_index", templateVars);
+  //res.status(200).render("urls_show", templateVariable);
 });
 
+// URLS/:SHORTURL/DELETE
+app.post("/urls/:shortURL/delete", (req,res) => {
+  const shortURL = req.params.shortURL;
+  
+  delete newUrlDatabase[req.params.shortURL];
+  
+  res.status(200).render("urls_index", templateVars);
+  
+});
+
+
+
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`TinyApp listening on port ${PORT}!`);
 });
 
 
