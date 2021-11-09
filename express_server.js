@@ -42,9 +42,23 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+app.get('/u/:shortURL', (req, res) => {
+  //console.log(req.params);
+  const longUrlnew = urlDatabase[req.params.shortURL];
+  //console.log(longUrlnew);
+  res.status(200).redirect(longUrlnew);
+
+})
+
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  const longUrl = req.body.longURL
+  const shortUrl = generatRandomString();
+  const templateVariable = { shortURL: shortUrl, longURL: longUrl};
+
+  const newUrlDatabase = {...urlDatabase, [shortUrl]: longUrl};
+  const templateVars = { urls: newUrlDatabase };
+  //res.status(200).render("urls_index", templateVars);
+  res.status(200).render("urls_show", templateVariable);
 });
 
 app.listen(PORT, () => {
