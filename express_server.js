@@ -9,9 +9,7 @@ const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
-let newUrlDatabase = {};
-let templateVariable = {};
-let templateVars = {};
+
 
 
 app.use(bodyParser.urlencoded({extended: true}));
@@ -36,7 +34,9 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+  let templateVars = { 
+    shortURL: req.params.shortURL, 
+    longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
 
@@ -48,39 +48,46 @@ app.get("/urls.json", (req, res) => {
 app.get('/u/:shortURL', (req, res) => {
   //console.log(req.params);
   const longUrlnew = urlDatabase[req.params.shortURL];
-  //console.log(longUrlnew);
-  res.status(200).redirect(longUrlnew);
+  res.redirect(longUrlnew);
 
-})
+});
+
+app.get('/urls/:shortURL', (req,res) => {
+  let templateVars = {
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.param.shortURL]
+  };
+  res.render("urls_show", templateVars);
+});
 
 app.post("/urls", (req, res) => {
-  const longUrl = req.body.longURL
-  const shortUrl = generatRandomString();
-  newUrlDatabase = {...urlDatabase, [shortUrl]: longUrl};
-  templateVariable = { shortURL: shortUrl, longURL: longUrl};
-  
-  templateVars = { urls: newUrlDatabase };
-  res.status(200).render("urls_index", templateVars);
-  //res.status(200).render("urls_show", templateVariable);
+  //console.log(req.body);
+  const shortURL = generatRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${shortURL}`);
 });
 
 // URLS/:SHORTURL/DELETE
 app.post("/urls/:shortURL/delete", (req,res) => {
-  const shortURL = req.params.shortURL;
-  
-  delete newUrlDatabase[req.params.shortURL];
-  
-  res.status(200).render("urls_index", templateVars);
-  
+  delete urlDatabase[req.params.shortURL];
+  res.redirect('/urls');
 });
 
+app.post("/urls/:shortURL/edit", (req, res) => {
+  res.redirect(`/urls/${req.params.shortURL}`);
+});
+
+app.post("/urls/:shortURL/update", (req, res) => {
+  urlDatabase[req.params.shortURL] = req.body.longURL;
+  res.redirect('/urls');
+});
 
 
 app.listen(PORT, () => {
   console.log(`TinyApp listening on port ${PORT}!`);
 });
 
-
+//generating random string for short URL
 function generatRandomString() {
   let randomString = '';
     let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
