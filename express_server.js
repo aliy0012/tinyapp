@@ -66,6 +66,12 @@ app.get('/urls/:shortURL', (req,res) => {
   res.render("urls_show", templateVars);
 });
 
+//register page route
+app.get('/register', (req, res) => {
+  let varTemplate = {username : req.cookies['username']};
+  res.render("register", varTemplate);
+})
+
 app.post("/urls", (req, res) => {
   //console.log(req.body);
   const shortURL = generatRandomString();
