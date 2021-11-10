@@ -7,8 +7,21 @@ const cookieParser = require('cookie-parser');
 app.set("view engine", "ejs");
 app.use(cookieParser());
 
+//user object to store information
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher"
+  }
+}
 
-
+//urldatabase
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -19,6 +32,16 @@ const urlDatabase = {
 app.use(bodyParser.urlencoded({extended: true}));
 
 
+//generating random string for short URL
+function generatRandomString() {
+  let randomString = '';
+    let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (let i = 0; i < 6; i++) {
+      randomString += characters.charAt(Math.floor(Math.random()*characters.length));
+   }
+   return randomString;
+}
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -70,6 +93,20 @@ app.get('/urls/:shortURL', (req,res) => {
 app.get('/register', (req, res) => {
   let varTemplate = {username : req.cookies['username']};
   res.render("register", varTemplate);
+});
+
+//registering user email and password
+app.post('/register', (req, res) => {
+  const user_id = generatRandomString();
+  console.log(req.body.email);
+  users[user_id] = {
+    user_id,
+    email: req.body.email,
+    password: req.body.password
+  };
+  console.log(users[user_id]);
+
+  res.redirect('/urls');
 })
 
 app.post("/urls", (req, res) => {
@@ -111,13 +148,3 @@ app.listen(PORT, () => {
   console.log(`TinyApp listening on port ${PORT}!`);
 });
 
-//generating random string for short URL
-function generatRandomString() {
-  let randomString = '';
-    let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-    for (let i = 0; i < 6; i++) {
-      randomString += characters.charAt(Math.floor(Math.random()*characters.length));
-   }
-   return randomString;
-}
