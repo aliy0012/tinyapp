@@ -1,3 +1,4 @@
+const getUserByEmail = require("./helper");
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -15,31 +16,10 @@ app.use(cookieSession({
 }))
 
 //user object to store information
-const users = {
-  userRandomID: {
-    user_id: "userRandomID",
-    email: "user@example.com",
-    password: "purple",
-  },
-  user2RandomID: {
-    user_id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher",
-  },
-};
+const users = {};
 
 //urldatabase
-const urlDatabase = {
-  b2xVn2: {
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "aaa"
-  },
-  "9sm5xK": {
-    longURL: "http://www.google.com",
-    userID: "bbb"
-  }
-};
-
+const urlDatabase = {};
 
 
 //generating random string for short URL
@@ -56,25 +36,6 @@ function generatRandomString() {
   return randomString;
 }
 
-//email lookup function
-function emailFinder(emailZ, users) {
-  for (const user in users) {
-    if (users[user].email === emailZ) {
-      return true;
-    }
-  }
-    return false;
-};
-
-//login checker function
-function loginChecker(email) {
-  for (const user in users) {
-    if (users[user].email === email) {
-      return users[user];
-    }
-  }
-    return undefined;
-};
 
 
 function userURLs(id) {
@@ -103,9 +64,6 @@ app.get("/urls", (req, res) => {
   const userId = req.session['user_id'];
   const userUrls = userURLs(userId);
   let templateVars = { urls: userUrls, user: users[userId] };
-  console.log(templateVars.user);
-  console.log(users);
-  console.log(req.session.user_id);
   res.render('urls_index', templateVars);
 });
 
@@ -154,7 +112,7 @@ app.get("/register", (req, res) => {
 //registering user email and password
 app.post("/register", (req, res) => {
   if (req.body.email && req.body.password) {
-    if (emailFinder(req.body.email, users)) {
+    if (undefined !== getUserByEmail(req.body.email, users)) {
       res.statusCode = 400;
       return res.send("Email exists. Please Login.");
     }
@@ -164,7 +122,6 @@ app.post("/register", (req, res) => {
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 10)
     };
-    console.log(users[userId]);
     //res.cookie("user_id", userId);
     req.session.user_id = userId;
     return res.redirect("/urls");
@@ -205,7 +162,7 @@ app.get("/login", (req, res) => {
 //adding login functionality
 app.post("/login", (req, res) => {
 
-  const userL = loginChecker(req.body.email);
+  const userL = getUserByEmail(req.body.email, users);
   
   if (userL === undefined) {
     res.status = 403;
