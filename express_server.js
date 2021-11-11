@@ -23,8 +23,14 @@ const users = {
 
 //urldatabase
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b2xVn2: {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "aaa"
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "bbb"
+  }
 };
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -63,6 +69,19 @@ function loginChecker(email) {
     return undefined;
 };
 
+
+function userURLs(id) {
+  let userURLS = {};
+  for (const shortURL in urlDatabase) {
+    if (id === urlDatabase[shortURL].userID) {
+      userURLS[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userURLS;
+};
+
+
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -71,14 +90,27 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+
+//url index page
 app.get("/urls", (req, res) => {
   const templateVars = {
-    urls: urlDatabase,
+    urls: userURLs(req.cookies['user_id']),
     user: users[req.cookies["user_id"]],
   };
   res.render("urls_index", templateVars);
 });
 
+// urls with user id
+app.post("/urls", (req, res) => {
+  const shortURL = generatRandomString();
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: req.cookies['user_id']
+  };
+  res.redirect(`/urls/${shortURL}`);
+});
+
+// create new short url with login check
 app.get("/urls/new", (req, res) => {
   let templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_new", templateVars);
@@ -139,12 +171,7 @@ app.post("/register", (req, res) => {
   return res.send("Error code : 400.    Email or Password field is empty!");
 });
 
-app.post("/urls", (req, res) => {
-  //console.log(req.body);
-  const shortURL = generatRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
-});
+
 
 // URLS/:SHORTURL/DELETE
 app.post("/urls/:shortURL/delete", (req, res) => {
