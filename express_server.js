@@ -53,6 +53,16 @@ function emailFinder(emailZ, users) {
     return false;
 };
 
+//login checker function
+function loginChecker(email) {
+  for (const user in users) {
+    if (users[user].email === email) {
+      return users[user];
+    }
+  }
+    return undefined;
+};
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -157,18 +167,22 @@ app.get("/login", (req, res) => {
   res.render('login', templateVars);
 });
 
-//cookie login
+//adding login functionality
 app.post("/login", (req, res) => {
 
-  const userId = generatRandomString();
-  users[userId] = {
-    userId,
-    email: req.body.email,
-    password: req.body.password,
-    };
-  res.cookie("user_id", userId);
-  res.redirect("urls");
-    
+  const userL = loginChecker(req.body.email);
+  
+  if (userL === undefined) {
+    res.status = 403;
+    return res.send("Not registered as user. Please Register");
+  } else {
+    if (userL.password !== req.body.password) {
+      res.status = 403;
+      return res.send("Password and email not matching!");
+    } 
+    res.cookie('user_id', userL.userId);
+    res.redirect('urls');
+  }  
 });
 
 //the Logout route
