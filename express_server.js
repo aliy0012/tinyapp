@@ -8,10 +8,10 @@ const bcrypt = require('bcryptjs'); //bcrypt added
 const cookieSession = require('cookie-session');
 
 app.set("view engine", "ejs");
-
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieSession({
   name: 'session',
-  keys: ["123"],
+  keys: ['123343434434344', 'elementdncddceckekhyfty']
 }))
 
 //user object to store information
@@ -40,7 +40,7 @@ const urlDatabase = {
   }
 };
 
-app.use(bodyParser.urlencoded({ extended: true }));
+
 
 //generating random string for short URL
 function generatRandomString() {
@@ -100,9 +100,12 @@ app.get("/hello", (req, res) => {
 
 //url index page
 app.get("/urls", (req, res) => {
-  const userId = req.session.user_id;
+  const userId = req.session['user_id'];
   const userUrls = userURLs(userId);
   let templateVars = { urls: userUrls, user: users[userId] };
+  console.log(templateVars.user);
+  console.log(users);
+  console.log(req.session.user_id);
   res.render('urls_index', templateVars);
 });
 
@@ -157,11 +160,13 @@ app.post("/register", (req, res) => {
     }
     const userId = generatRandomString();
     users[userId] = {
-      userId,
+      user_id: userId,
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 10)
     };
-    res.cookie("user_id", userId);
+    console.log(users[userId]);
+    //res.cookie("user_id", userId);
+    req.session.user_id = userId;
     return res.redirect("/urls");
   }
   res.statusCode = 400;
