@@ -153,14 +153,22 @@ app.post("/urls/:shortURL/update", (req, res) => {
 
 // login page
 app.get("/login", (req, res) => {
-  let templateVars = { user: users[req.cookies["user_id"]] };
-  res.render("urls_login", templateVars);
+  let templateVars = {user: users[req.cookies['user_id']]};
+  res.render('login', templateVars);
 });
 
 //cookie login
 app.post("/login", (req, res) => {
-  let templateVars = { user: users[req.cookies["user_id"]] };
-  res.redirect("/urls");
+
+  const userId = generatRandomString();
+  users[userId] = {
+    userId,
+    email: req.body.email,
+    password: req.body.password,
+    };
+  res.cookie("user_id", userId);
+  res.redirect("urls");
+    
 });
 
 //the Logout route
