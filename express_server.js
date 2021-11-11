@@ -119,6 +119,7 @@ app.get("/urls/new", (req, res) => {
   res.redirect('/login');
 });
 
+//user specific urls showed
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
     user: users[req.cookies["user_id"]],
@@ -128,12 +129,8 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
 
 app.get("/u/:shortURL", (req, res) => {
-  //console.log(req.params);
   const longUrlnew = urlDatabase[req.params.shortURL];
   res.redirect(longUrlnew);
 });
