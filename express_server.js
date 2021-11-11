@@ -123,7 +123,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
     user: users[req.cookies["user_id"]],
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: userURLs(req.cookies['user_id']),
   };
   res.render("urls_show", templateVars);
 });
