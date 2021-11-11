@@ -1,33 +1,27 @@
+const getUserByEmail = require("./helpers");
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
+//const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs"); //bcrypt added
+
+const cookieSession = require("cookie-session");
 
 app.set("view engine", "ejs");
-app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["123343434434344", "elementdncddceckekhyfty"],
+  })
+);
 
 //user object to store information
-const users = {
-  userRandomID: {
-    user_id: "userRandomID",
-    email: "user@example.com",
-    password: "purple",
-  },
-  user2RandomID: {
-    user_id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher",
-  },
-};
+const users = {};
 
 //urldatabase
-const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
-};
-
-app.use(bodyParser.urlencoded({ extended: true }));
+const urlDatabase = {};
 
 //generating random string for short URL
 function generatRandomString() {
@@ -43,25 +37,15 @@ function generatRandomString() {
   return randomString;
 }
 
-//email lookup function
-function emailFinder(emailZ, users) {
-  for (const user in users) {
-    if (users[user].email === emailZ) {
-      return true;
+function userURLs(id) {
+  let userURLS = {};
+  for (const shortURL in urlDatabase) {
+    if (id === urlDatabase[shortURL].userID) {
+      userURLS[shortURL] = urlDatabase[shortURL];
     }
   }
-    return false;
-};
-
-//login checker function
-function loginChecker(email) {
-  for (const user in users) {
-    if (users[user].email === email) {
-      return users[user];
-    }
-  }
-    return undefined;
-};
+  return userURLS;
+}
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -71,87 +55,89 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+//url index page
 app.get("/urls", (req, res) => {
-  const templateVars = {
-    urls: urlDatabase,
-    user: users[req.cookies["user_id"]],
-  };
+  const userId = req.session["user_id"];
+  const userUrls = userURLs(userId);
+  let templateVars = { urls: userUrls, user: users[userId] };
   res.render("urls_index", templateVars);
 });
 
-app.get("/urls/new", (req, res) => {
-  let templateVars = { user: users[req.cookies["user_id"]] };
-  res.render("urls_new", templateVars);
+// urls with user id
+app.post("/urls", (req, res) => {
+  const shortURL = generatRandomString();
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: req.session.user_id,
+  };
+  res.redirect(`/urls/${shortURL}`);
 });
 
+// create new short url with login check
+app.get("/urls/new", (req, res) => {
+  if (req.session.user_id) {
+    let templateVars = { user: users[req.session.user_id] };
+    return res.render("urls_new", templateVars);
+  }
+  return res.redirect("/login");
+});
+
+//user specific urls showed
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: users[req.session.user_id],
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: userURLs(req.session.user_id).longURL,
   };
   res.render("urls_show", templateVars);
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
 app.get("/u/:shortURL", (req, res) => {
-  //console.log(req.params);
   const longUrlnew = urlDatabase[req.params.shortURL];
   res.redirect(longUrlnew);
 });
 
-app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = {
-    user: users[req.cookies["user_id"]],
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.param.shortURL],
-  };
-  res.render("urls_show", templateVars);
-});
-
 //register page route
 app.get("/register", (req, res) => {
-  let varTemplate = { user: users[req.cookies["user_id"]] };
+  let varTemplate = { user: users[req.session.user_id] };
   res.render("register", varTemplate);
 });
 
 //registering user email and password
 app.post("/register", (req, res) => {
   if (req.body.email && req.body.password) {
-    if (emailFinder(req.body.email, users)) {
+    if (undefined !== getUserByEmail(req.body.email, users)) {
       res.statusCode = 400;
       return res.send("Email exists. Please Login.");
     }
     const userId = generatRandomString();
-    //console.log(req.body.email);
     users[userId] = {
-      userId,
+      user_id: userId,
       email: req.body.email,
-      password: req.body.password,
+      password: bcrypt.hashSync(req.body.password, 10),
     };
-    res.cookie("user_id", userId);
-     return res.redirect("/urls");
+    //res.cookie("user_id", userId);
+    req.session.user_id = userId;
+    return res.redirect("/urls");
   }
   res.statusCode = 400;
-  return res.send("Error code : 400.    Email or Password field is empty!");
+  return res.send(
+    "<h4>Error code : 400. Email or Password field is empty!</h4>"
+  );
 });
 
-app.post("/urls", (req, res) => {
-  //console.log(req.body);
-  const shortURL = generatRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
-});
-
-// URLS/:SHORTURL/DELETE
+// only can delete own urls
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+  const shortURL = req.params.shortURL;
+
+  if (req.session.user_id === urlDatabase[req.params.shortURL].userID) {
+    delete urlDatabase[req.params.shortURL];
+  }
+
+  return res.redirect("/urls");
 });
 
+//only can edit own urls
 app.post("/urls/:shortURL/edit", (req, res) => {
   res.redirect(`/urls/${req.params.shortURL}`);
 });
@@ -163,31 +149,32 @@ app.post("/urls/:shortURL/update", (req, res) => {
 
 // login page
 app.get("/login", (req, res) => {
-  let templateVars = {user: users[req.cookies['user_id']]};
-  res.render('login', templateVars);
+  let templateVars = { user: users[req.session.user_id] };
+  res.render("login", templateVars);
 });
 
 //adding login functionality
 app.post("/login", (req, res) => {
+  const userL = getUserByEmail(req.body.email, users);
 
-  const userL = loginChecker(req.body.email);
-  
   if (userL === undefined) {
     res.status = 403;
     return res.send("Not registered as user. Please Register");
   } else {
-    if (userL.password !== req.body.password) {
+    if (bcrypt.compareSync(userL.password, req.body.password)) {
+      req.session.user_id = userL.userId;
+      res.redirect("urls");
+    } else {
       res.status = 403;
       return res.send("Password and email not matching!");
-    } 
-    res.cookie('user_id', userL.userId);
-    res.redirect('urls');
-  }  
+    }
+  }
 });
 
 //the Logout route
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  res.clearCookie("session.sig");
+  res.clearCookie("session");
   res.redirect("/urls");
 });
 
