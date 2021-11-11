@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const bcrypt = require('bcryptjs'); //bcrypt added
 
 app.set("view engine", "ejs");
 app.use(cookieParser());
@@ -152,13 +153,13 @@ app.post("/register", (req, res) => {
     users[userId] = {
       userId,
       email: req.body.email,
-      password: req.body.password,
+      password: bcrypt.hashSync(req.body.password, 10)
     };
     res.cookie("user_id", userId);
     return res.redirect("/urls");
   }
   res.statusCode = 400;
-  return res.send("Error code : 400.    Email or Password field is empty!");
+  return res.send("<h4>Error code : 400. Email or Password field is empty!</h4>");
 });
 
 
@@ -199,11 +200,11 @@ app.post("/login", (req, res) => {
     res.status = 403;
     return res.send("Not registered as user. Please Register");
   } else {
-    if (userL.password !== req.body.password) {
+    if (!bcrypt.compareSync(userL.password, req.body.password)) {
       res.status = 403;
       return res.send("Password and email not matching!");
     } 
-    res.cookie('user_id', userL.userId);
+    req.session.user_id = userL.userId;
     res.redirect('urls');
   }  
 });
