@@ -1,5 +1,5 @@
 //login checker function
-function getUserByEmail(email, users) {
+const getUserByEmail = function(email, users) {
   for (const user in users) {
     if (users[user].email === email) {
       return users[user];
@@ -7,4 +7,4 @@ function getUserByEmail(email, users) {
   }
     return undefined;
 };
-module.exports = {getUserByEmail};
+module.exports = getUserByEmail;
