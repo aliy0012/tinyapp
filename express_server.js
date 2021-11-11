@@ -112,8 +112,11 @@ app.post("/urls", (req, res) => {
 
 // create new short url with login check
 app.get("/urls/new", (req, res) => {
-  let templateVars = { user: users[req.cookies["user_id"]] };
-  res.render("urls_new", templateVars);
+  if(req.cookies['user_id']) {
+    let templateVars = { user: users[req.cookies["user_id"]] };
+    res.render("urls_new", templateVars);
+  } 
+  res.redirect('/login');
 });
 
 app.get("/urls/:shortURL", (req, res) => {
