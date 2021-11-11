@@ -1,4 +1,4 @@
-const getUserByEmail = require("./helper");
+const getUserByEmail = require("./helpers");
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -168,18 +168,20 @@ app.post("/login", (req, res) => {
     res.status = 403;
     return res.send("Not registered as user. Please Register");
   } else {
-    if (!bcrypt.compareSync(userL.password, req.body.password)) {
+    if (bcrypt.compareSync(userL.password, req.body.password)) {
+      req.session.user_id = userL.userId;
+      res.redirect('urls');
+    } else {
       res.status = 403;
       return res.send("Password and email not matching!");
-    } 
-    req.session.user_id = userL.userId;
-    res.redirect('urls');
-  }  
+    }  
+  }
 });
 
 //the Logout route
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  res.clearCookie('session.sig');
+  res.clearCookie('session');
   res.redirect("/urls");
 });
 
