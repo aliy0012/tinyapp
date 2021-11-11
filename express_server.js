@@ -93,11 +93,10 @@ app.get("/hello", (req, res) => {
 
 //url index page
 app.get("/urls", (req, res) => {
-  const templateVars = {
-    urls: userURLs(req.cookies['user_id']),
-    user: users[req.cookies["user_id"]],
-  };
-  res.render("urls_index", templateVars);
+  const userId = req.cookies['user_id'];
+  const userUrls = userURLs(userId);
+  let templateVars = { urls: userUrls, user: users[userId] };
+  res.render('urls_index', templateVars);
 });
 
 // urls with user id
@@ -114,9 +113,9 @@ app.post("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   if(req.cookies['user_id']) {
     let templateVars = { user: users[req.cookies["user_id"]] };
-    res.render("urls_new", templateVars);
+    return res.render("urls_new", templateVars);
   } 
-  res.redirect('/login');
+  return res.redirect('/login');
 });
 
 //user specific urls showed
@@ -124,7 +123,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
     user: users[req.cookies["user_id"]],
     shortURL: req.params.shortURL,
-    longURL: userURLs(req.cookies['user_id']),
+    longURL: userURLs(req.cookies["user_id"]).longURL,
   };
   res.render("urls_show", templateVars);
 });
@@ -135,14 +134,6 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longUrlnew);
 });
 
-app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = {
-    user: users[req.cookies["user_id"]],
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.param.shortURL],
-  };
-  res.render("urls_show", templateVars);
-});
 
 //register page route
 app.get("/register", (req, res) => {
@@ -158,14 +149,13 @@ app.post("/register", (req, res) => {
       return res.send("Email exists. Please Login.");
     }
     const userId = generatRandomString();
-    //console.log(req.body.email);
     users[userId] = {
       userId,
       email: req.body.email,
       password: req.body.password,
     };
     res.cookie("user_id", userId);
-     return res.redirect("/urls");
+    return res.redirect("/urls");
   }
   res.statusCode = 400;
   return res.send("Error code : 400.    Email or Password field is empty!");
@@ -173,12 +163,18 @@ app.post("/register", (req, res) => {
 
 
 
-// URLS/:SHORTURL/DELETE
+// only can delete own urls
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+  const shortURL = req.params.shortURL;
+  
+  if (req.cookies['user_id'] === urlDatabase[req.params.shortURL].userID) {
+    delete urlDatabase[req.params.shortURL];
+  }
+
+  return res.redirect('/urls');
 });
 
+//only can edit own urls
 app.post("/urls/:shortURL/edit", (req, res) => {
   res.redirect(`/urls/${req.params.shortURL}`);
 });
