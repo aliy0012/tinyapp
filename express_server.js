@@ -1,4 +1,4 @@
-const getUserByEmail = require("./helpers");
+const {getUserByEmail, generatRandomString, userURLs} = require("./helpers");
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   cookieSession({
     name: "session",
-    keys: ["123343434434344", "elementdncddceckekhyfty"],
+    keys: ["1233434344", "elementdncddcec"],
   })
 );
 
@@ -23,32 +23,13 @@ const users = {};
 //urldatabase
 const urlDatabase = {};
 
-//generating random string for short URL
-function generatRandomString() {
-  let randomString = "";
-  let characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-  for (let i = 0; i < 6; i++) {
-    randomString += characters.charAt(
-      Math.floor(Math.random() * characters.length)
-    );
-  }
-  return randomString;
-}
-
-function userURLs(id) {
-  let userURLS = {};
-  for (const shortURL in urlDatabase) {
-    if (id === urlDatabase[shortURL].userID) {
-      userURLS[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userURLS;
-}
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (req.session.user_id) {
+    res.render(`/urls`);
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get("/hello", (req, res) => {
@@ -58,7 +39,7 @@ app.get("/hello", (req, res) => {
 //url index page
 app.get("/urls", (req, res) => {
   const userId = req.session["user_id"];
-  const userUrls = userURLs(userId);
+  const userUrls = userURLs(userId, urlDatabase);
   let templateVars = { urls: userUrls, user: users[userId] };
   res.render("urls_index", templateVars);
 });
@@ -84,17 +65,23 @@ app.get("/urls/new", (req, res) => {
 
 //user specific urls showed
 app.get("/urls/:shortURL", (req, res) => {
+  const userUrls = userURLs(req.session.user_id, urlDatabase);
+  const shortURL = req.params.shortURL;
   let templateVars = {
     user: users[req.session.user_id],
-    shortURL: req.params.shortURL,
-    longURL: userURLs(req.session.user_id).longURL,
+    shortURL: shortURL,
+    longURL: userUrls[shortURL].longURL
   };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longUrlnew = urlDatabase[req.params.shortURL];
-  res.redirect(longUrlnew);
+  if (urlDatabase[req.params.shortURL]) {
+    const longURL = urlDatabase[req.params.shortURL].longURL;
+    res.redirect(longURL);
+  } else {
+    res.status(404).send('This short URL does not exist');
+  }
 });
 
 //register page route
