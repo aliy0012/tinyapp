@@ -1,4 +1,4 @@
-const {getUserByEmail, generatRandomString, userURLs, currentUser} = require("./helpers");
+const {getUserByEmail, generatRandomString, userURLs, currentUser} = require("./helpers/helpers");
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
