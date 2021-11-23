@@ -135,9 +135,17 @@ app.post("/urls/:shortURL/edit", (req, res) => {
   res.redirect(`/urls/${req.params.shortURL}`);
 });
 
+
+//user can edit own links, else asked to login
 app.post("/urls/:shortURL/update", (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.longURL;
-  res.redirect("/urls");
+  if (!req.session['userID']) {
+    res.send('<h4>User should login</h4><a href="http://localhost:8080/login">Login HERE!</a>');
+  } else if (urlDatabase[req.params.shortURL].userID === req.session['userID']) {
+    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+    res.redirect('/urls');
+  } else {
+    res.send('<h4>URL does not exist</h4>');
+  }
 });
 
 // login page
@@ -158,7 +166,7 @@ app.post("/login", (req, res) => {
     req.session.userID = user.userID;
     res.redirect('/urls');
   } else {
-    res.status(403).send("Email and password is not matching");
+    res.status(403).send("<h4>Please register</h4><a href='http://localhost:8080/register'>Register HERE!</a>");
   }
 });
 
