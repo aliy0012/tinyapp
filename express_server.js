@@ -1,4 +1,7 @@
 const {getUserByEmail, generatRandomString, userURLs, currentUser} = require("./helpers/helpers");
+const {urlDatabase, users} = require("./helpers/database");
+
+
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -12,15 +15,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   cookieSession({
     name: "session",
-    keys: ["1233434344", "elementdncddcec"],
+    keys: ["1233434344"],
   })
 );
 
-//user object to store information
-const users = {};
-
-//urldatabase
-const urlDatabase = {};
 
 
 app.get("/", (req, res) => {
