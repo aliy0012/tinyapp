@@ -32,5 +32,14 @@ function userURLs(id, urlDatabase) {
   return userURLS;
 }
 
+//checking for login user
+function currentUser(cookie, userDataBase) {
+  for (const key in userDataBase) {
+    if (cookie === key) {
+      return true;
+    }
+  } return false;
+};
 
-module.exports = {getUserByEmail, generatRandomString, userURLs};
+
+module.exports = {getUserByEmail, generatRandomString, userURLs, currentUser};

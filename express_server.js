@@ -1,4 +1,4 @@
-const {getUserByEmail, generatRandomString, userURLs} = require("./helpers");
+const {getUserByEmail, generatRandomString, userURLs, currentUser} = require("./helpers");
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -34,16 +34,15 @@ app.get("/", (req, res) => {
 
 //url index page
 app.get("/urls", (req, res) => {
-  const userID = req.session.userID;
-  const userUrls = userURLs(userID, urlDatabase);
-  const templateVars = {
-    urls: userUrls,
-    user: users[userID] 
-  };
-  if (!userID) {
-    res.statusCode = 401;
-  }  
-  res.render('urls_index', templateVars);
+  if (currentUser(req.session.userID, users)) {
+    const userID = req.session.userID;
+    const userUrls = userURLs(userID, urlDatabase);
+    const templateVars = {
+      urls: userUrls,
+      user: users[userID]
+      };
+    res.render('urls_index', templateVars);
+  }
 });
 
 // urls with user id
@@ -51,12 +50,12 @@ app.post("/urls", (req, res) => {
   if (req.session.userID) {
     const shortURL = generatRandomString();
     urlDatabase[shortURL] = {
-      longURL: req.body.longURL,
-      userID: req.session.userID
+      userID: req.session.userID,
+      longURL: req.body.longURL
     };
     res.redirect(`/urls/${shortURL}`);
   } else {
-    res.status(404).send('Please log in to proceed');
+    res.status(401).send('Please log in to proceed');
   }
 });
 
@@ -99,24 +98,25 @@ app.get("/register", (req, res) => {
 //registering user email and password
 app.post("/register", (req, res) => {
   if (req.body.email && req.body.password) {
-    if (undefined !== getUserByEmail(req.body.email, users)) {
+    if (!getUserByEmail(req.body.email, users)) {
+      const userID = generatRandomString();
+      users[userID] = {
+        userID,
+        email: req.body.email,
+        password: bcrypt.hashSync(req.body.password, 10)
+      };
+      req.session.userID = userID;
+      res.redirect('/urls');
+    } else {
       res.statusCode = 400;
-      return res.send("Email exists. Please Login.");
+      return res.send("<h4>Please Login, email registered</h4>");
+      
     }
-    const userId = generatRandomString();
-    users[userId] = {
-      user_id: userId,
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password, 10),
-    };
-    //res.cookie("user_id", userId);
-    req.session.userID = userId;
-    return res.redirect("/urls");
+
+  } else {
+    res.statusCode = 400;
+    return res.send("<h4>Email or password can not be empty!</h4>");
   }
-  res.statusCode = 400;
-  return res.send(
-    "<h4>Error code : 400. Email or Password field is empty!</h4>"
-  );
 });
 
 // only can delete own urls
