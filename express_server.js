@@ -40,12 +40,14 @@ app.get("/urls", (req, res) => {
       user: users[userID]
       };
     res.render('urls_index', templateVars);
+  } else {
+    res.redirect("login");
   }
 });
 
 // urls with user id
 app.post("/urls", (req, res) => {
-  if (req.session.userID) {
+  if (currentUser(req.session.userID, users)) {
     const shortURL = generatRandomString();
     urlDatabase[shortURL] = {
       userID: req.session.userID,
@@ -68,6 +70,7 @@ app.get("/urls/new", (req, res) => {
 
 //user specific urls showed
 app.get("/urls/:shortURL", (req, res) => {
+  if (currentUser(req.session.userID, users)){
   const userUrls = userURLs(req.session.userID, urlDatabase);
   const shortURL = req.params.shortURL;
   let templateVars = {
@@ -76,6 +79,9 @@ app.get("/urls/:shortURL", (req, res) => {
     longURL: userUrls[shortURL].longURL
   };
   res.render("urls_show", templateVars);
+} else {
+  res.send("<h4>This url is not belong you</h4>")
+}
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -158,13 +164,19 @@ app.get("/login", (req, res) => {
 //adding login functionality
 app.post("/login", (req, res) => {
 
+  if (!req.body.email || !req.body.password) {
+    res.status(403);
+    return res.send("<h4>Email or Password field can not be empty</h4><a href='http://localhost:8080/login'>Login HERE!</a>");
+  }
+
   const user = getUserByEmail(req.body.email, users);
 
   if (user && bcrypt.compareSync(req.body.password, user.password)) {
     req.session.userID = user.userID;
-    res.redirect('/urls');
-  } else {
-    res.status(403).send("<h4>Passwor or email field can not be blank!</h4><a href='http://localhost:8080/login'>Try again HERE!</a>");
+    return res.redirect('/urls');
+  } else if (user === undefined) {
+    res.status(403);
+    return res.send("<h4>Email and password are not matching!</h4><a href='http://localhost:8080/register'>Register HERE!</a>");
   }
 });
 
