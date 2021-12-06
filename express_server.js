@@ -148,33 +148,23 @@ app.post("/urls/:shortURL/update", (req, res) => {
 
 // login page
 app.get("/login", (req, res) => {
-  if (req.session['userID']){
-    res.redirect('/urls');
-  } else {
   const templateVars = {
     email: users[req.session.email],
     user: users[req.session.userID]
   };
   res.render('login', templateVars);
-}
 });
 
-//adding login functionality,
-//if email and password corrct forward to /urls,
-//if not forward to login page
+//adding login functionality
 app.post("/login", (req, res) => {
 
   const user = getUserByEmail(req.body.email, users);
 
-  if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
-    const templateVars = {
-      user: users[req.session['userID']],
-      err: 'Password or email address are incorrect.'
-    };
-    res.render('login', templateVars);
-  } else {
-    req.session['userID'] = userID;
+  if (user && bcrypt.compareSync(req.body.password, user.password)) {
+    req.session.userID = user.userID;
     res.redirect('/urls');
+  } else {
+    res.status(403).send("<h4>Passwor or email field can not be blank!</h4><a href='http://localhost:8080/login'>Try again HERE!</a>");
   }
 });
 
