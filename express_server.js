@@ -148,23 +148,33 @@ app.post("/urls/:shortURL/update", (req, res) => {
 
 // login page
 app.get("/login", (req, res) => {
+  if (req.session['userID']){
+    res.redirect('/urls');
+  } else {
   const templateVars = {
     email: users[req.session.email],
     user: users[req.session.userID]
   };
   res.render('login', templateVars);
+}
 });
 
-//adding login functionality
+//adding login functionality,
+//if email and password corrct forward to /urls,
+//if not forward to login page
 app.post("/login", (req, res) => {
 
   const user = getUserByEmail(req.body.email, users);
 
-  if (user && bcrypt.compareSync(req.body.password, user.password)) {
-    req.session.userID = user.userID;
-    res.redirect('/urls');
+  if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
+    const templateVars = {
+      user: users[req.session['userID']],
+      err: 'Password or email address are incorrect.'
+    };
+    res.render('login', templateVars);
   } else {
-    res.status(403).send("<h4>Please register</h4><a href='http://localhost:8080/register'>Register HERE!</a>");
+    req.session['userID'] = userID;
+    res.redirect('/urls');
   }
 });
 
