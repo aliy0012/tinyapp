@@ -170,13 +170,16 @@ app.post("/login", (req, res) => {
   }
 
   const user = getUserByEmail(req.body.email, users);
-
-  if (user && bcrypt.compareSync(req.body.password, user.password)) {
+ 
+  
+  if (user === undefined) {
+    res.status(403);
+    return res.send("<h4>User is not registered!</h4><a href='http://localhost:8080/register'>Register HERE!</a>");
+  } else if (bcrypt.compareSync(req.body.password, user.password)) {
     req.session.userID = user.userID;
     return res.redirect('/urls');
-  } else if (user === undefined) {
-    res.status(403);
-    return res.send("<h4>Email and password are not matching!</h4><a href='http://localhost:8080/register'>Register HERE!</a>");
+  } else {
+    return res.send("<h4>Email and Password is not matching!</h4><a href='http://localhost:8080/login'>Login HERE!</a>");
   }
 });
 
