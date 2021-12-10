@@ -70,18 +70,17 @@ app.get("/urls/new", (req, res) => {
 
 //user specific urls showed
 app.get("/urls/:shortURL", (req, res) => {
-  if (currentUser(req.session.userID, users)){
-  const userUrls = userURLs(req.session.userID, urlDatabase);
-  const shortURL = req.params.shortURL;
-  let templateVars = {
-    user: users[req.session.userID],
-    shortURL: shortURL,
-    longURL: userUrls[shortURL].longURL
-  };
-  res.render("urls_show", templateVars);
-} else {
-  res.send("<h4>This url is not belong you</h4>")
-}
+  if (urlDatabase[req.params.shortURL]) {
+    let templateVars = {
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL].longURL,
+      urlUser: urlDatabase[req.params.shortURL].userID,
+      user: users[req.session.user_id],
+    };
+    res.render('urls_show', templateVars);
+  } else {
+    res.send("<h4>This url is not belong you</h4>")
+  }
 });
 
 app.get("/u/:shortURL", (req, res) => {
